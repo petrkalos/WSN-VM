@@ -1,0 +1,63 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+import TOSSIM
+import sys
+import random
+
+from TOSSIM import *
+
+t = TOSSIM.Tossim([])
+
+t.addChannel("vm",sys.stdout);
+
+r = t.radio()
+
+X = Y = 0
+N = int(sys.argv[1]);
+S=-10;
+
+
+if(X==0):
+	for i in range(1,N+1):
+		r.add(i,i+1,S);
+		r.add(i+1,i,S);
+else:
+	for i in range(0,N-1):
+		if (i+1) % X != 0:
+			#horizontal +1 +2
+			r.add(i,i+1,S); r.add(i+1,i,S);
+			if (i+2) % X != 0:
+				r.add(i,i+2,S*2); r.add(i+2,i,S*2);
+			#diagonial
+			if (i+X+1) < N:
+				r.add(i,i+X+1,S*1.41); r.add(i+X+1,i,S*1.41);
+		
+		if i % X != 0 and i+X-1<N:
+			r.add(i,i+X-1,S*1.41); r.add(i+X-1,i,S*1.41);
+		
+		if(i+Y<N):
+			r.add(i,i+Y,S);r.add(i+Y,i,S);
+			
+		if(i+2*Y<N):
+			r.add(i,i+2*Y,S*2);r.add(i+2*Y,i,S*2);
+
+noiseTrace = open("meyer-short.txt","r");
+for line in noiseTrace:
+	str1 = line.strip()
+	if str1:
+		val = int(str1)
+		for i in range(1,N+1):
+			t.getNode(i).addNoiseTraceReading(val)
+	
+for i in range(1, N+1):
+	t.getNode(i).createNoiseModel()
+	
+for i in range(1,N+1):
+	m = t.getNode(i)
+	m.bootAtTime(0)
+	
+t.runNextEvent()
+
+#while m.isOn():
+for i in xrange(50000*N):
+	t.runNextEvent()
